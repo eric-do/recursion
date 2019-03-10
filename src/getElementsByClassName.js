@@ -7,4 +7,19 @@
 var getElementsByClassName = function(className
 ) {
   // your code here
+  var results = [];
+
+  recursiveSearch(document.body);
+
+  function recursiveSearch(node) {
+    if (node.classList && node.classList.contains(className)){
+      results.push(node);
+    }
+    if (node.childNodes && node.childNodes.length > 0) {
+      for (var i = 0; i < node.childNodes.length; i++) {
+        recursiveSearch(node.childNodes[i]);
+      }
+    }
+  }
+  return results;
 };
