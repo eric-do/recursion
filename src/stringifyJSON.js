@@ -8,9 +8,9 @@ var stringifyJSON = function(obj) {
   if (typeof obj === "string") {
     return '"' + obj + '"';
   }
+
   if (Array.isArray(obj)) {
     var arr = [];
-
     for (var i = 0; i < obj.length; i++) {
       arr.push(stringifyJSON(obj[i]));
     }
@@ -29,5 +29,4 @@ var stringifyJSON = function(obj) {
     return '{' + arr.join(',') + '}';
   }
   return obj.toString();
-
 }
