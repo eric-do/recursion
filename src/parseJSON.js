@@ -3,5 +3,64 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-  // your code goes here
+  var literalMap = {
+    "null"      : null,
+    "true"      : true,
+    "false"     : false,
+    "undefined" : undefined
+  };
+
+  console.log('input string: ' + json);
+  console.log('expected: ' + JSON.stringify(json));
+
+  // If json is an array
+  if (json[0] === '[' && (json[json.length - 1] === ']')) {
+    var arr = [];
+    var str = getBody(json);
+    if (str.length > 0) {
+      arr = str.split(',').map(function(x) { return clean(x); });
+      console.log(arr);
+    }
+    console.log('actual: ' + JSON.stringify(arr));
+    return arr;
+  }
+
+  // If json is an object, e.g. '{"foo": ""}'
+  if (json[0] === '{' && (json[json.length - 1] === '}')) {
+    var obj = {};
+    var str = getBody(json);
+    if (str.length > 0) {
+      var pairsArr = str.split(',');
+      pairsArr.forEach(function(keyVal) {
+        var propArr = keyVal.split(':');
+        var key = propArr[0] ? clean(propArr[0]) : propArr[0];
+        console.log('key: ' + propArr[0]);
+        var val = propArr[1] ? clean(propArr[1]) : propArr[1];
+        obj[key] = val;
+      })
+
+    }
+    console.log('actual: ' + JSON.stringify(obj));
+    return obj;
+  }
+
+  function clean(string) {
+    var str = string.trim().replace(/["]/g, '');
+    if (!isNaN(str) && str.length > 0) {
+      var number = +str;
+      return number;
+    }
+    return checkLiteral(str);
+  }
+
+  function checkLiteral(string) {
+    if (string in literalMap) {
+      return literalMap[string];
+    }
+    return string;
+  }
+
+  function getBody(string) {
+    return string.substring(1, json.length - 1);
+  }
 };
