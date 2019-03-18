@@ -18,17 +18,6 @@ var parseJSON = function(json) {
     if (json[0] === '{' && (json[json.length - 1] === '}')) {
       return processObject(json);
     }
-
-    // If json has members
-    if (json.indexOf(',') !== -1) {
-      console.log('member');
-    }
-
-    // If json is a pair
-    if (json.indexOf(':') !== -1) {
-      console.log('pair');
-    }
-
     // Else json is a value
     return clean(json);
   }
@@ -48,10 +37,6 @@ var parseJSON = function(json) {
     return obj;
   }
 
-  function processMembers(json) {
-
-  }
-
   function processPairs(str, obj) {
     var regex = /[\[\{\,]+/g;
     var colonIndex = str.indexOf(':');
@@ -61,34 +46,60 @@ var parseJSON = function(json) {
     if (strRemainder.search(regex) === -1) {
       obj[key] = clean(strRemainder);
       return obj;
-    } else {
-      obj[key] = checkType(clean(strRemainder));
-    }
-
-    if ((strRemainder.indexOf(',') >= 0 && strRemainder.search(/[\[\{]+/g) >= 0)
+    } else if ((strRemainder.indexOf(',') >= 0 && strRemainder.search(/[\[\{]+/g) >= 0)
         && strRemainder.indexOf(',') < strRemainder.search(/[\[\{]+/g)
         || (strRemainder.indexOf(',') >= 0 && strRemainder.search(/[\[\{]+/g) === -1)) {
       obj[key] = clean(strRemainder.slice(0, strRemainder.indexOf(',')));
       strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
-      processPairs(strRemainder, obj);
+      return processPairs(strRemainder, obj);
+    } else if ((strRemainder. indexOf(',') >= 0 && strRemainder.search(/[\]\}]+/g) >= 0)
+        && strRemainder.indexOf(',') > strRemainder.search(/[\]\}]+/g)) {
+      obj[key] = checkType(clean(strRemainder.slice(0, strRemainder.indexOf(','))));
+      strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
+      return processPairs(strRemainder, obj);
+    } else {
+      obj[key] = checkType(clean(strRemainder));
     }
   }
 
   function processArray(json) {
+    var arr = [];
     var str = getBody(json);
-    return processElements(str);
+    if (str.length > 0) {
+      arr = processMembers(str);
+    }
+    return arr;
+
+    function processMembers(str) {
+      var regex = /[\[\{\,]+/g;
+
+      if (typeof str === 'object') {
+        arr.push(str);
+        return arr;
+      } else if (str.search(regex) === -1) {
+        arr.push(clean(str));
+        return arr;
+      } else if ((str.indexOf(',') >= 0 && str.search(/[\[\{]+/g) >= 0)
+          && str.indexOf(',') < str.search(/[\[\{]+/g)
+          || (str.indexOf(',') >= 0 && str.search(/[\[\{]+/g) === -1)) {
+        var member = clean(str.slice(0, str.indexOf(',')));
+        arr.push(member);
+        var strRemainder = str.slice(str.indexOf(',') + 1);
+        return processMembers(strRemainder);
+      } else if (str.indexOf(',') > str.search(/[\]\}]+/g)){
+        var member = clean(str.slice(0, str.indexOf(',')));
+        arr.push(checkType(member));
+        var strRemainder = str.slice(str.indexOf(',') + 1);
+        return processMembers(checkType(strRemainder.trim()));
+      } else {
+        arr.push(checkType(str));
+        return arr;
+      }
+    }
   }
 
   function processValues(json) {
 
-  }
-
-  function processElements(json) {
-    if (json.length > 0) {
-      return json.split(',').map(function(x) { return clean(x); });
-    } else {
-      return [];
-    }
   }
 
   function replaceCharactersInKeys(str, original, placeholder) {
@@ -97,20 +108,32 @@ var parseJSON = function(json) {
              return match.replace(original, placeholder);
            });
   }
+//["\\""a""]
+//["\\""a""]
+
+ function escapeSpecialChars(str) {
+  return str.replace(/\\n/g, "\n")
+             .replace(/\\'/g, "\'")
+             .replace(/\\"/g, '\"')
+             .replace(/\\&/g, "\&")
+             .replace(/\\r/g, "\r")
+             .replace(/\\t/g, "\t")
+             .replace(/\\b/g, "\b")
+             .replace(/\\f/g, "\f");
+  };
 
   function clean(string) {
     // Clean() will:
       // Remove leading/trailing whitespaces
-      // Remove double quotes from string TODO this is not a good idea - CHANGE
+      // Remove leading/trailing quotes
       // Return number if string is a number
       // Return literal if it corresponds to null, true/false, undefined
       // Else return string
-    var str = string.trim().replace(/["]/g, '');
+    var str = escapeSpecialChars(string.trim().replace(/(^")|("$)/g, ''));
     if (!isNaN(str) && str.length > 0) {
       var number = +str;
       return number;
     }
-    str = str.replace('##', ',');
     return checkLiteral(str);
   }
 
