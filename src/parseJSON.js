@@ -108,14 +108,17 @@ var parseJSON = function(json) {
   }
 
   function escapeSpecialChars(str) {
-    return str.replace(/\\n/g, "\n")
-               .replace(/\\'/g, "\'")
-               .replace(/\\"/g, '\"')
-               .replace(/\\&/g, "\&")
-               .replace(/\\r/g, "\r")
-               .replace(/\\t/g, "\t")
-               .replace(/\\b/g, "\b")
-               .replace(/\\f/g, "\f");
+    var arr = [];
+    for (i = 0; i < str.length;) {
+      if (str[i] === '\\') {
+        arr.push(str[i+1]);
+        i += 2;
+      } else {
+        arr.push(str[i]);
+        i += 1;
+      }
+    }
+    return arr.join('');
   };
 
   function clean(string) {
