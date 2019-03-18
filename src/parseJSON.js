@@ -3,43 +3,92 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-  var literalMap = {
-    "null"      : null,
-    "true"      : true,
-    "false"     : false,
-    "undefined" : undefined
-  };
-
   console.log('input string: ' + json);
   console.log('expected: ' + JSON.stringify(json));
 
+  return checkType(json);
+
   // If json is an array
-  if (json[0] === '[' && (json[json.length - 1] === ']')) {
-    var arr = [];
-    var str = getBody(json);
-    if (str.length > 0) {
-      arr = str.split(',').map(function(x) { return clean(x); });
+  function checkType(json) {
+    if (json[0] === '[' && (json[json.length - 1] === ']')) {
+      return processArray(json);
     }
-    return arr;
+
+    // If json is an object, e.g. '{"foo": ""}'
+    if (json[0] === '{' && (json[json.length - 1] === '}')) {
+      return processObject(json);
+    }
+
+    // If json has members
+    if (json.indexOf(',') !== -1) {
+      console.log('member');
+    }
+
+    // If json is a pair
+    if (json.indexOf(':') !== -1) {
+      console.log('pair');
+    }
+
+    // Else json is a value
+    return clean(json);
   }
 
-  // If json is an object, e.g. '{"foo": ""}'
-  if (json[0] === '{' && (json[json.length - 1] === '}')) {
+  function getBody(string) {
+    return string.substring(1, string.length - 1);
+  }
+
+  // If json is a string
+  function processObject(json) {
     var obj = {};
     var str = getBody(json);
 
     if (str.length > 0) {
-      str = replaceCharactersInKeys(str, ',', '##');
-      var pairsArr = str.split(',');
-      pairsArr.forEach(function(keyVal) {
-        var propArr = keyVal.split(':');
-        var key = propArr[0] ? clean(propArr[0]) : propArr[0];
-        var val = propArr[1] ? clean(propArr[1]) : propArr[1];
-        obj[key] = val;
-      })
-
+      processPairs(str, obj);
     }
     return obj;
+  }
+
+  function processMembers(json) {
+
+  }
+
+  function processPairs(str, obj) {
+    var regex = /[\[\{\,]+/g;
+    var colonIndex = str.indexOf(':');
+    var key = clean(str.substring(0, colonIndex));
+    var strRemainder = str.substring(colonIndex + 1);
+
+    if (strRemainder.search(regex) === -1) {
+      obj[key] = clean(strRemainder);
+      return obj;
+    } else {
+      obj[key] = checkType(clean(strRemainder));
+    }
+
+    if ((strRemainder.indexOf(',') >= 0 && strRemainder.search(/[\[\{]+/g) >= 0)
+        && strRemainder.indexOf(',') < strRemainder.search(/[\[\{]+/g)
+        || (strRemainder.indexOf(',') >= 0 && strRemainder.search(/[\[\{]+/g) === -1)) {
+      obj[key] = clean(strRemainder.slice(0, strRemainder.indexOf(',')));
+      strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
+      processPairs(strRemainder, obj);
+    }
+  }
+
+  function processArray(json) {
+    var str = getBody(json);
+    return processElements(str);
+  }
+
+  function processValues(json) {
+
+  }
+
+  function processElements(json) {
+    if (json.length > 0) {
+      return json.split(',').map(function(x) { return clean(x); });
+    } else {
+      return [];
+    }
   }
 
   function replaceCharactersInKeys(str, original, placeholder) {
@@ -66,15 +115,18 @@ var parseJSON = function(json) {
   }
 
   function checkLiteral(string) {
-    // This function checks to see if the string is an object literal
+    // This function checks to see if the string is null/true/false/undefined
     // and returns the literal otherwie returns the string
+    var literalMap = {
+      "null"      : null,
+      "true"      : true,
+      "false"     : false,
+      "undefined" : undefined
+    };
+
     if (string in literalMap) {
       return literalMap[string];
     }
     return string;
-  }
-
-  function getBody(string) {
-    return string.substring(1, json.length - 1);
   }
 };
