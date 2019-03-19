@@ -53,10 +53,6 @@ var parseJSON = function(json) {
     }
   }
 
-  function getBody(string) {
-    return string.substring(1, string.length - 1);
-  }
-
   // If json is a string
   function processObject(json) {
     var obj = {};
@@ -105,6 +101,10 @@ var parseJSON = function(json) {
     }
   }
 
+  function getBody(string) {
+    return string.substring(1, string.length - 1);
+  }
+
   function getOuterObject(json) {
     var found = false;
     var count = 0;
@@ -147,7 +147,7 @@ var parseJSON = function(json) {
     var found = false;
     while (found === false && index < str.length) {
       var char = str.charAt(index);
-      if (char === '"') {
+      if (char === '"' & str.charAt(index - 1) !== '\\') {
         found = true;
       }
       index++;
