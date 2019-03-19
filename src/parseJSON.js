@@ -3,21 +3,53 @@
 
 // but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
-
   return checkType(json);
 
   function checkType(json) {
-    // If json is an array
-    if (json[0] === '[' && (json[json.length - 1] === ']')) {
-      return processArray(json);
+    if (json[0] === '[' && json[json.length - 1] === ']') {
+      var arr = processArray(json);
+      return arr;
     }
 
-    // If json is an object, e.g. '{"foo": ""}'
-    if (json[0] === '{' && (json[json.length - 1] === '}')) {
+    if (json[0] === '{' && json[json.length - 1] === '}') {
       return processObject(json);
     }
-    // Else json is a value
-    return clean(json);
+    return;
+  }
+
+  function processArray(json) {
+    // JSON object is confirmed to be an array
+    // Get body of the array
+    // Process array body
+    var arr = [];
+    var arrStr = getOuterObject(json); // Returns the outermost array
+    var body = getBody(arrStr);        // Returns body of outer array
+
+    if (body.length > 0) {
+      processMembers(body);
+    }
+
+    return arr;
+
+    function processMembers(str) {
+      // Receives body of array
+      // If body is another object/array, call checkType to handle
+      // If body is a value, push the next member to the array
+      // If there are more members, slice the remaining body
+      // Recursively call processMembers on the rest of the members
+      if (str[0] === '[' || str[0] === '{') {
+        return checkType(str);
+      } else {
+        var memArr = getValueString(str).split(',');
+        var member = memArr[0];
+        var strRemainder = str.slice(member.length);
+        strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
+        arr.push(clean(member));
+        if (strRemainder.length > 0) {
+          processMembers(strRemainder.trim());
+        }
+      }
+    }
   }
 
   function getBody(string) {
@@ -27,84 +59,99 @@ var parseJSON = function(json) {
   // If json is a string
   function processObject(json) {
     var obj = {};
-    var str = getBody(json);
+    var objStr = getOuterObject(json); // Returns the outermost object
+    var body = getBody(objStr);        // Returns body of outer object
 
-    if (str.length > 0) {
-      processPairs(str, obj);
+    if (body.length > 0) {
+      processPairs(body);
     }
+
     return obj;
-  }
 
-  function processPairs(str, obj) {
-    var regex = /[\[\{\,]+/g;
-    var colonIndex = str.indexOf(':');
-    var key = clean(str.substring(0, colonIndex));
-    var strRemainder = str.substring(colonIndex + 1);
-
-    if (isNotObject(strRemainder)) {
-      obj[key] = clean(strRemainder);
-      return obj;
-    } else if (hasMoreMembersAndNextIsValue(strRemainder)) {
-      obj[key] = clean(strRemainder.slice(0, strRemainder.indexOf(',')));
-      strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
-      return processPairs(strRemainder, obj);
-    } else if (hasMoreMembersAndNextIsObject(strRemainder)) {
-      obj[key] = checkType(clean(strRemainder.slice(0, strRemainder.indexOf(','))));
-      strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
-      return processPairs(strRemainder, obj);
-    } else {
-      obj[key] = checkType(clean(strRemainder));
-    }
-  }
-
-  function processArray(json) {
-    var arr = [];
-    var str = getBody(json);
-    if (str.length > 0) {
-      arr = processMembers(str);
-    }
-
-    return arr;
-
-    function processMembers(str) {
-      if (typeof str === 'object') {
-        arr.push(str);
-        return arr;
-      } else if (isNotObject(str)) {
-        arr.push(clean(str));
-        return arr;
-      } else if (hasMoreMembersAndNextIsValue(str)) {
-        var member = clean(str.slice(0, str.indexOf(',')));
-        var strRemainder = str.slice(str.indexOf(',') + 1);
-        arr.push(member);
-        return processMembers(strRemainder);
-      } else if (hasMoreMembersAndNextIsObject(str)){
-        var member = clean(str.slice(0, str.indexOf(',')));
-        var strRemainder = str.slice(str.indexOf(',') + 1);
-        arr.push(checkType(member));
-        return processMembers(checkType(strRemainder.trim()));
+    function processPairs(str) {
+      // Receives body of object
+      // If body is another object/array, call checkType to handle
+      // If body is a value, process the next pair
+      // If the body contains more pairs, slice the remaining body
+      // Recursively call processPairs on the rest of the pairs
+      if (str[0] === '[' || str[0] === '{') {
+        return checkType(str);
       } else {
-        arr.push(checkType(str));
-        return arr;
+        // The next set of open/close quotes is a key
+        // The remainder of the body after the next colon is the key's value
+        // (plus potential other pairs)
+        var key = getValueString(str);
+        var strRemainder = str.slice(key.length);
+        strRemainder = strRemainder.slice(strRemainder.indexOf(':') + 1).trim();
+      //  var val = getValueString(strRemainder); // Next set of open/close quotes is the value
+        var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;;
+
+        if (val[0] === '[' || val[0] === '{') {
+          obj[clean(key)] = checkType(str);
+        } else {
+          obj[clean(key)] = clean(val);
+        }
+
+        // If there are more pairs after the value, we move the stringRemainder
+        // past the previous value and after the following comma
+        // Then we make the recursive call to processPairs
+        if (strRemainder.length > val.length) {
+          var tmp = strRemainder.substr(val.length);
+          tmp = tmp.substr(tmp.indexOf(',') + 1);
+          processPairs(tmp.trim());
+        }
       }
     }
   }
 
-  function isNotObject(str) {
-    var regex = /[\[\{\,]+/g;
+  function getOuterObject(json) {
+    var found = false;
+    var count = 0;
+    var index = 0;
 
-    return str.search(regex) === -1;
+    if (json[0] === '[') {
+      while (found === false && index < json.length) {
+        var char = json.charAt(index);
+        if (char === '[') {
+          count++;
+        } else if (char === ']') {
+          count--;
+        }
+        if (count === 0) {
+          found = true;
+        } else {
+          index++;
+        }
+      }
+    } else if (json[0] === '{') {
+      while (found === false && index < json.length) {
+        var char = json.charAt(index);
+        if (char === '{') {
+          count++;
+        } else if (char === '}') {
+          count--;
+        }
+        if (count === 0) {
+          found = true;
+        } else {
+          index++;
+        }
+      }
+    }
+    return json.substr(0, index + 1);
   }
 
-  function hasMoreMembersAndNextIsValue(str) {
-    return ((str.indexOf(',') >= 0 && str.search(/[\[\{]+/g) >= 0)
-        && str.indexOf(',') < str.search(/[\[\{]+/g)
-        || (str.indexOf(',') >= 0 && str.search(/[\[\{]+/g) === -1));
-  }
-
-  function hasMoreMembersAndNextIsObject(str) {
-    return ((str.indexOf(',') >= 0 && str.search(/[\]\}]+/g) >= 0)
-        && str.indexOf(',') > str.search(/[\]\}]+/g));
+  function getValueString(str) {
+    var index = 1;
+    var found = false;
+    while (found === false && index < str.length) {
+      var char = str.charAt(index);
+      if (char === '"') {
+        found = true;
+      }
+      index++;
+    }
+    return str.substr(0, index);
   }
 
   function escapeSpecialChars(str) {
