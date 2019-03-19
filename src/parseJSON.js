@@ -1,7 +1,3 @@
-// this is what you would do if you were one to do things the easy way:
-// var parseJSON = JSON.parse;
-
-// but you're not, so you'll write it from scratch:
 var parseJSON = function(json) {
   return checkType(json);
 
@@ -22,8 +18,8 @@ var parseJSON = function(json) {
     // Get body of the array
     // Process array body
     var arr = [];
-    var arrStr = getOuterObject(json); // Returns the outermost array
-    var body = getBody(arrStr).trim();        // Returns body of outer array
+    var arrStr = getOuterObject(json);   // Returns the outermost array
+    var body = getBody(arrStr).trim();   // Returns body of outer array
 
     if (body.length > 0) {
       processMembers(body);
@@ -86,7 +82,7 @@ var parseJSON = function(json) {
           obj[clean(key)] = checkType(strRemainder);
         } else {
           var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;
-    
+
           obj[clean(key)] = clean(val);
         }
 
@@ -103,10 +99,17 @@ var parseJSON = function(json) {
   }
 
   function getBody(string) {
+    // This function returns the content between the first and last character
+    // of passed string. It's assumed the function is only used on objects
+    // when the first/last characters are open/close brackets.
     return string.substring(1, string.length - 1);
   }
 
   function getOuterObject(json) {
+    // This function returns the outermost object
+    // Assumes json provided is valid and starts with an opening bracket
+    // Searches for the corresponding closing bracket and returns string
+    // This can return an outer object with nested objects.
     var found = false;
     var count = 0;
     var index = 0;
@@ -144,6 +147,7 @@ var parseJSON = function(json) {
   }
 
   function getValueString(str) {
+    // Returns the value between quotes
     var index = 1;
     var found = false;
     while (found === false && index < str.length) {
