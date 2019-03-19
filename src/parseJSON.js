@@ -40,20 +40,15 @@ var parseJSON = function(json) {
       if (str[0] === '[' || str[0] === '{') {
         var member = getOuterObject(str);
         arr.push(checkType(member));
-        if (str.length > member.length) {
-          var strRemainder = str.slice(member.length);
-          strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
-          processMembers(strRemainder.trim());
-        }
       } else {
         var memArr = getValueString(str).split(',');
         var member = memArr[0];
         arr.push(clean(member));
+      }
+      if (str.length > member.length) {
         var strRemainder = str.slice(member.length);
         strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
-        if (strRemainder.length > 0) {
-          processMembers(strRemainder.trim());
-        }
+        processMembers(strRemainder.trim());
       }
     }
   }
