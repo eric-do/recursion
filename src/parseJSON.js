@@ -38,13 +38,19 @@ var parseJSON = function(json) {
       // If there are more members, slice the remaining body
       // Recursively call processMembers on the rest of the members
       if (str[0] === '[' || str[0] === '{') {
-        return checkType(str);
+        var member = getOuterObject(str);
+        arr.push(checkType(member));
+        if (str.length > member.length) {
+          var strRemainder = str.slice(member.length);
+          strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
+          processMembers(strRemainder.trim());
+        }
       } else {
         var memArr = getValueString(str).split(',');
         var member = memArr[0];
+        arr.push(clean(member));
         var strRemainder = str.slice(member.length);
         strRemainder = strRemainder.slice(strRemainder.indexOf(',') + 1);
-        arr.push(clean(member));
         if (strRemainder.length > 0) {
           processMembers(strRemainder.trim());
         }
@@ -83,12 +89,12 @@ var parseJSON = function(json) {
         var key = getValueString(str);
         var strRemainder = str.slice(key.length);
         strRemainder = strRemainder.slice(strRemainder.indexOf(':') + 1).trim();
-      //  var val = getValueString(strRemainder); // Next set of open/close quotes is the value
-        var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;;
 
-        if (val[0] === '[' || val[0] === '{') {
-          obj[clean(key)] = checkType(str);
+        if (strRemainder[0] === '[' || strRemainder[0] === '{') {
+          obj[clean(key)] = checkType(strRemainder);
+          var val = strRemainder;
         } else {
+          var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;
           obj[clean(key)] = clean(val);
         }
 
