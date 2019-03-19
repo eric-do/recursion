@@ -6,12 +6,12 @@ var parseJSON = function(json) {
   return checkType(json);
 
   function checkType(json) {
-    if (json[0] === '[' && json[json.length - 1] === ']') {
+    if (json[0] === '[') {
       var arr = processArray(json);
       return arr;
     }
 
-    if (json[0] === '{' && json[json.length - 1] === '}') {
+    if (json[0] === '{') {
       return processObject(json);
     }
     return;
@@ -86,8 +86,8 @@ var parseJSON = function(json) {
         strRemainder = strRemainder.slice(strRemainder.indexOf(':') + 1).trim();
 
         if (strRemainder[0] === '[' || strRemainder[0] === '{') {
+          var val = getOuterObject(strRemainder);
           obj[clean(key)] = checkType(strRemainder);
-          var val = strRemainder;
         } else {
           var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;
           obj[clean(key)] = clean(val);
