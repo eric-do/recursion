@@ -23,7 +23,7 @@ var parseJSON = function(json) {
     // Process array body
     var arr = [];
     var arrStr = getOuterObject(json); // Returns the outermost array
-    var body = getBody(arrStr);        // Returns body of outer array
+    var body = getBody(arrStr).trim();        // Returns body of outer array
 
     if (body.length > 0) {
       processMembers(body);
@@ -57,7 +57,7 @@ var parseJSON = function(json) {
   function processObject(json) {
     var obj = {};
     var objStr = getOuterObject(json); // Returns the outermost object
-    var body = getBody(objStr);        // Returns body of outer object
+    var body = getBody(objStr).trim();        // Returns body of outer object
 
     if (body.length > 0) {
       processPairs(body);
@@ -86,6 +86,7 @@ var parseJSON = function(json) {
           obj[clean(key)] = checkType(strRemainder);
         } else {
           var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;
+    
           obj[clean(key)] = clean(val);
         }
 
