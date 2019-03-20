@@ -81,7 +81,13 @@ var parseJSON = function(json) {
           var val = getOuterObject(strRemainder);
           obj[clean(key)] = checkType(strRemainder);
         } else {
-          var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;
+          if (strRemainder[0] === '"') {
+            var val = getValueString(strRemainder);
+          } else {
+            var val = strRemainder.indexOf(',') >= 0
+                    ? strRemainder.slice(0, strRemainder.indexOf(','))
+                    : strRemainder;
+          }
           obj[clean(key)] = clean(val);
         }
 
