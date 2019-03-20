@@ -82,7 +82,6 @@ var parseJSON = function(json) {
           obj[clean(key)] = checkType(strRemainder);
         } else {
           var val = strRemainder.indexOf(',') >= 0 ? strRemainder.slice(0, strRemainder.indexOf(',')) : strRemainder;
-
           obj[clean(key)] = clean(val);
         }
 
@@ -181,12 +180,14 @@ var parseJSON = function(json) {
       // Return number if string is a number
       // Return literal if it corresponds to null, true/false, undefined
       // Else returns string
-    var str = escapeSpecialChars(string.trim().replace(/(^")|("$)/g, ''));
+    var str = string.trim();
     if (!isNaN(str) && str.length > 0) {
       var number = +str;
       return number;
+    } else {
+      str = escapeSpecialChars(string.replace(/(^")|("$)/g, ''));
+      return checkLiteral(str);
     }
-    return checkLiteral(str);
   }
 
   function checkLiteral(string) {
